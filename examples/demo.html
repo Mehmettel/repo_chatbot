@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemeVault - MVP Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .section { margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+        .section h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
+        input, button, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        button:hover { background: #5568d3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .error { border-left-color: #e74c3c; color: #e74c3c; }
+        .success { border-left-color: #2ecc71; color: #2ecc71; }
+        .video-item {
+            padding: 10px;
+            background: #fff;
+            margin: 8px 0;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .video-item strong { display: block; margin-bottom: 5px; }
+        .video-item small { color: #666; }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-PENDING { background: #ffeaa7; color: #d63031; }
+        .status-PROCESSING { background: #74b9ff; color: #0984e3; }
+        .status-COMPLETED { background: #55efc4; color: #00b894; }
+        .status-FAILED { background: #ff7675; color: #d63031; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 MemeVault</h1>
+        <p class="subtitle">AI destekli mizahi video arşivi - MVP Demo (BLUEPRINT uyumlu)</p>
+
+        <!-- Auth -->
+        <div class="section">
+            <h2>1. Kimlik Doğrulama</h2>
+            <input type="email" id="email" placeholder="E-posta" value="demo@memevault.com">
+            <input type="password" id="password" placeholder="Şifre" value="demo123">
+            <button onclick="register()">Kayıt Ol</button>
+            <button onclick="login()">Giriş Yap</button>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Folders -->
+        <div class="section">
+            <h2>2. Klasör Oluştur</h2>
+            <input type="text" id="folderName" placeholder="Klasör adı" value="Komik Videolar">
+            <button onclick="createFolder()">Klasör Oluştur</button>
+            <button onclick="listFolders()">Klasörleri Listele</button>
+            <div id="folderResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Videos -->
+        <div class="section">
+            <h2>3. Video Ekle (Celery ile indirme)</h2>
+            <input type="url" id="videoUrl" placeholder="Video URL (YouTube, Instagram, TikTok)" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+            <select id="folderSelect">
+                <option value="">-- Önce klasör listele --</option>
+            </select>
+            <button onclick="createVideo()">Video Ekle</button>
+            <button onclick="listVideos()">Videoları Listele</button>
+            <div id="videoResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Search -->
+        <div class="section">
+            <h2>4. Akıllı Arama (Semantik)</h2>
+            <input type="text" id="searchQuery" placeholder="Arama sorgusu (örn: komik kedi videosu)" value="komik video">
+            <button onclick="search()">Ara</button>
+            <div id="searchResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let token = localStorage.getItem('token');
+
+        function showResult(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            el.className = `result ${isError ? 'error' : 'success'}`;
+            el.innerHTML = message;
+        }
+
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const resp = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                showResult('authResult', `✓ Kayıt başarılı! Token: ${token.slice(0,20)}...`);
+            } catch (e) {
+                showResult('authResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const resp = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                showResult('authResult', `✓ Giriş başarılı! Token: ${token.slice(0,20)}...`);
+            } catch (e) {
+                showResult('authResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function createFolder() {
+            const name = document.getElementById('folderName').value;
+            try {
+                const resp = await fetch(`${API_BASE}/folders/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({name})
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                showResult('folderResult', `✓ Klasör oluşturuldu: ${data.name} (ID: ${data.id})`);
+                listFolders();
+            } catch (e) {
+                showResult('folderResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function listFolders() {
+            try {
+                const resp = await fetch(`${API_BASE}/folders/`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                const select = document.getElementById('folderSelect');
+                select.innerHTML = data.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+                showResult('folderResult', `✓ ${data.length} klasör bulundu: ${data.map(f => f.name).join(', ')}`);
+            } catch (e) {
+                showResult('folderResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function createVideo() {
+            const source_url = document.getElementById('videoUrl').value;
+            const folder_id = document.getElementById('folderSelect').value;
+            if (!folder_id) return showResult('videoResult', '✗ Önce klasör seçin', true);
+            try {
+                const resp = await fetch(`${API_BASE}/videos/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({source_url, folder_id})
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                showResult('videoResult', `✓ Video eklendi! ID: ${data.id}, Durum: <span class="status-badge status-${data.status}">${data.status}</span>`);
+            } catch (e) {
+                showResult('videoResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function listVideos() {
+            try {
+                const resp = await fetch(`${API_BASE}/videos/`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                if (data.length === 0) {
+                    showResult('videoResult', '✓ Henüz video yok.');
+                } else {
+                    const html = data.map(v => `
+                        <div class="video-item">
+                            <strong>${v.source_url || 'URL yok'}</strong>
+                            <small>Durum: <span class="status-badge status-${v.status}">${v.status}</span> | 
+                            ${v.description_ai ? v.description_ai.slice(0,80)+'...' : 'İşleniyor'}</small>
+                        </div>
+                    `).join('');
+                    showResult('videoResult', `✓ ${data.length} video bulundu:<br>${html}`);
+                }
+            } catch (e) {
+                showResult('videoResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+
+        async function search() {
+            const q = document.getElementById('searchQuery').value;
+            try {
+                const resp = await fetch(`${API_BASE}/chat/search?q=${encodeURIComponent(q)}&limit=5`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Hata');
+                if (data.results.length === 0) {
+                    showResult('searchResult', '✓ Sonuç bulunamadı.');
+                } else {
+                    const html = data.results.map(r => `
+                        <div class="video-item">
+                            <strong>Video: ${r.video_id}</strong>
+                            <small>Skor: ${r.score.toFixed(3)} | ${r.description_ai || 'Açıklama yok'}</small>
+                        </div>
+                    `).join('');
+                    showResult('searchResult', `✓ ${data.results.length} sonuç (sorgu: "${data.query}"):<br>${html}`);
+                }
+            } catch (e) {
+                showResult('searchResult', `✗ Hata: ${e.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+Generic single-database configuration for Alembic.
+Target: PostgreSQL + pgvector.
+
+Run from backend dir:
+  alembic upgrade head
+  alembic revision --autogenerate -m "message"
