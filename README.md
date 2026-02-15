@@ -22,8 +22,6 @@
 |-------|----------|
 | [KULLANICI_KILAVUZU.md](KULLANICI_KILAVUZU.md) | Kullanıcı kılavuzu — ne işe yarar, nasıl kullanılır |
 | [BLUEPRINT.md](BLUEPRINT.md) | Mimari plan (Modular Monolith, MVP/Faz 2) |
-| [docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md) | Mimari kararlar (ADR) |
-| [docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md) | Implementasyon özeti ve dosya yapısı |
 
 ---
 
@@ -117,7 +115,6 @@ repo_chatbot/
 │   ├── .env.example  # Şablon — .env buradan kopyalanır (repoda .env yok)
 │   └── requirements.txt
 ├── frontend/         # React (Vite), Tailwind
-├── docs/             # Mimari ve implementasyon dokümanları
 ├── examples/         # Python API client, HTML demo
 ├── BLUEPRINT.md
 ├── KULLANICI_KILAVUZU.md
