@@ -86,3 +86,20 @@ async def login(
 async def me(user: User = Depends(get_current_user)):
     """Giriş yapmış kullanıcı bilgisi."""
     return UserResponse(id=str(user.id), email=user.email)
+
+
+@router.post("/ensure-demo")
+async def ensure_demo_user():
+    """
+    Örnek kullanıcıyı (deneme@gmail.com / deneme) oluşturur veya şifresini günceller.
+    Giriş yapamıyorsanız bu endpoint'i çağırın (tarayıcıdan veya curl ile).
+    """
+    try:
+        from app.seed_user import seed_default_user
+        seed_default_user()
+        return {"ok": True, "message": "Örnek hesap hazır. deneme@gmail.com / deneme ile giriş yapın."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Örnek hesap oluşturulamadı. Docker ve veritabanının çalıştığından emin olun: {str(e)}",
+        )

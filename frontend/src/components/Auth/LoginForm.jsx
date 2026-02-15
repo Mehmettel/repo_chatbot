@@ -1,14 +1,32 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoMessage, setDemoMessage] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleEnsureDemo = async () => {
+    setDemoMessage('');
+    setDemoLoading(true);
+    try {
+      const res = await authAPI.ensureDemo();
+      setDemoMessage(res.data?.message || 'Örnek hesap hazır. Yukarıdaki bilgilerle giriş yapın.');
+      setEmail('deneme@gmail.com');
+      setPassword('deneme');
+    } catch (err) {
+      setDemoMessage(err.response?.data?.detail || 'Backend erişilemiyor. Docker ve API çalışıyor mu?');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +76,23 @@ export default function LoginForm() {
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 text-center">
+        Örnek hesap: <strong>deneme@gmail.com</strong> / <strong>deneme</strong>
+      </p>
+      <button
+        type="button"
+        onClick={handleEnsureDemo}
+        disabled={demoLoading}
+        className="w-full py-2 text-sm text-primary border border-primary rounded-lg hover:bg-primary/5 disabled:opacity-50 transition"
+      >
+        {demoLoading ? 'Hazırlanıyor...' : 'Örnek hesabı hazırla'}
+      </button>
+      {demoMessage && (
+        <div className={`p-3 rounded-lg text-sm ${demoMessage.includes('hazır') ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+          {demoMessage}
         </div>
       )}
 

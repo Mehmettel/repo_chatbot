@@ -17,8 +17,18 @@ async def lifespan(app: FastAPI):
     try:
         from app.seed_user import seed_default_user
         seed_default_user()
+        print("[MemeVault] Örnek hesap hazır: deneme@gmail.com / deneme")
     except Exception as e:
-        print(f"[Startup] Seed user atlandı: {e}")
+        print(f"[MemeVault] Örnek hesap oluşturulamadı (Docker/DB çalışıyor mu?): {e}")
+    
+    # S3 bucket yoksa oluştur (MinIO ilk çalıştırmada bucket yoktur)
+    try:
+        from app.services.storage import ensure_bucket_exists
+        ensure_bucket_exists()
+        print("[MemeVault] S3 bucket hazır")
+    except Exception as e:
+        print(f"[MemeVault] S3 bucket kontrolü başarısız (MinIO çalışıyor mu?): {e}")
+    
     yield
     # shutdown: cleanup
 

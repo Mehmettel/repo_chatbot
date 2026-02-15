@@ -1,0 +1,75 @@
+
+Başlatma ve durdurma için komutlar:
+
+---
+
+## Çalıştırma (başlatma)
+
+**1. Docker (PostgreSQL, Redis, MinIO)**  
+Bir terminalde:
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot"
+docker-compose up -d postgres redis minio
+```
+Birkaç saniye bekleyin.
+
+**2. Backend API**  
+İkinci terminalde:
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot\backend"
+venv\Scripts\activate
+set PYTHONPATH=%CD%
+uvicorn app.main:app --reload
+```
+
+**3. Celery worker**  
+Üçüncü terminalde:
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot\backend"
+venv\Scripts\activate
+set PYTHONPATH=%CD%
+celery -A app.workers.celery_app worker --loglevel=info --pool=solo
+```
+
+**4. Frontend**  
+Dördüncü terminalde:
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot\frontend"
+npm run dev
+```
+
+Tarayıcı: **http://localhost:5173**  
+Giriş: **deneme@gmail.com** / **deneme**
+
+---
+
+## Sonlandırma (durdurma)
+
+**Frontend, backend, Celery:**  
+İlgili terminallerde **Ctrl+C** ile durdurun.
+
+**Docker (veritabanı ve diğer servisler):**
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot"
+docker-compose stop
+```
+Veriler (videolar, kullanıcılar) kalır; sadece container’lar durur.
+
+**Verileri de silmek isterseniz (tüm videolar ve hesaplar gider):**
+```powershell
+cd "c:\Users\TEL\Desktop\file_pdf\Projeler ve yetkinlikler\repo_chatbot"
+docker-compose down -v
+```
+
+---
+
+## Özet
+
+| Ne yapıyorsunuz | Komut |
+|-----------------|--------|
+| Başlat (Docker) | `cd repo_chatbot` → `docker-compose up -d postgres redis minio` |
+| Başlat (API) | `cd backend` → `venv\Scripts\activate` → `set PYTHONPATH=%CD%` → `uvicorn app.main:app --reload` |
+| Başlat (Celery) | `cd backend` → aynı activate/PYTHONPATH → `celery -A app.workers.celery_app worker --loglevel=info --pool=solo` |
+| Başlat (Frontend) | `cd frontend` → `npm run dev` |
+| Durdur (Docker, veri kalsın) | `cd repo_chatbot` → `docker-compose stop` |
+| Durdur (terminaller) | Her terminalde **Ctrl+C** |

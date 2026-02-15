@@ -20,6 +20,7 @@ export const authAPI = {
   register: (email, password) => api.post('/auth/register', { email, password }),
   login: (email, password) => api.post('/auth/login', { email, password }),
   me: () => api.get('/auth/me'),
+  ensureDemo: () => api.post('/auth/ensure-demo'),
 };
 
 // Folders

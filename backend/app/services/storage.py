@@ -98,3 +98,21 @@ def delete_files(s3_keys: list[str], bucket: str | None = None) -> bool:
     except Exception as e:
         print(f"S3 bulk delete error: {e}")
         return False
+
+
+def ensure_bucket_exists(bucket: str | None = None) -> bool:
+    """Bucket yoksa oluşturur. MinIO ilk çalıştırmada bucket yoktur."""
+    bkt = bucket or settings.S3_BUCKET
+    client = get_s3_client()
+    try:
+        client.head_bucket(Bucket=bkt)
+        return True
+    except Exception:
+        # Bucket yok, oluştur
+        try:
+            client.create_bucket(Bucket=bkt)
+            print(f"[Storage] Bucket oluşturuldu: {bkt}")
+            return True
+        except Exception as e:
+            print(f"[Storage] Bucket oluşturulamadı: {e}")
+            return False
